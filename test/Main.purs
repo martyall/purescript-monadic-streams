@@ -3,6 +3,7 @@ module Test.Main where
 import Prelude
 
 import Control.Monad.Eff (Eff)
+import Data.Identity (Identity(..))
 import Data.Stream (stream, unstream)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -18,4 +19,4 @@ arraySpec :: forall r . Spec r Unit
 arraySpec = describe "converting to and from arrays" do
   it "unstream <<< stream == id" do
     let testArray = [1,2,3]
-    testArray `shouldEqual` (unstream <<< stream $ testArray)
+    Identity testArray `shouldEqual` (unstream <<< stream $ testArray)

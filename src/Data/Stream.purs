@@ -5,50 +5,52 @@ import Prelude
 import Data.Array (uncons, (:))
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Maybe (Maybe(..))
+import Data.Traversable (sequence)
 
-data StreamF a s = StreamF {step :: s -> Step a s, initialState :: s}
 
-data Step a s = Yield a s
-              | Skip    s
-              | Done
+data StreamT m a s = StreamT {step :: s -> Step m a s, initialState :: s}
 
-data Stream a = Stream (Exists (StreamF a))
+data Step m a s = Yield (m a) s
+                | Skip s
+                | Done
 
-instance functorStream :: Functor Stream where
+data Stream m a = Stream (Exists (StreamT m a))
+
+instance functorStream :: Functor m => Functor (Stream m) where
   map = mapStream
 
-stream :: forall a . Array a -> Stream a
+stream :: forall m a . Applicative m => Array a -> Stream m a
 stream as = Stream <<< mkExists $
-    StreamF { step: next
+    StreamT { step: next
             , initialState: as
             }
   where
-    next :: Array a -> Step a (Array a)
+    next :: Array a -> Step m a (Array a)
     next as' = case uncons as' of
       Nothing -> Done
-      Just {head, tail} -> Yield head tail
+      Just {head, tail} -> Yield (pure head) tail
 
-unstream :: forall a . Stream a -> Array a
-unstream as = runExists unstream' (unpackStream as)
+unstream :: forall m a . Applicative m => Stream m a -> m (Array a)
+unstream as = sequence $ runExists unstream' (unpackStream as)
   where
-    unstream' :: forall s . StreamF a s -> Array a
-    unstream' (StreamF stream) = case stream.step stream.initialState of
+    unstream' :: forall s . StreamT m a s -> Array (m a)
+    unstream' (StreamT stream) = case stream.step stream.initialState of
       Done -> []
-      Skip s' -> unstream' $ StreamF stream {initialState = s'}
-      Yield a s' -> a : unstream' (StreamF stream {initialState = s'})
+      Skip s' -> unstream' $ StreamT stream {initialState = s'}
+      Yield ma s' -> ma : unstream' (StreamT stream {initialState = s'})
 
 --------------------------------------------------------------------------------
 
-unpackStream :: forall a . Stream a -> Exists (StreamF a)
+unpackStream :: forall m a . Stream m a -> Exists (StreamT m a)
 unpackStream (Stream a) = a
 
-mapStream :: forall a b . (a -> b) -> Stream a -> Stream b
+mapStream :: forall m a b . Functor m => (a -> b) -> Stream m a -> Stream m b
 mapStream f as = runExists mapStream' $ unpackStream as
   where
-    mapStream' :: forall s. StreamF a s -> Stream b
-    mapStream' (StreamF stream) = Stream <<< mkExists $
-      StreamF stream { step = \s -> case stream.step s of
+    mapStream' :: forall s. StreamT m a s -> Stream m b
+    mapStream' (StreamT stream) = Stream <<< mkExists $
+      StreamT stream { step = \s -> case stream.step s of
                          Done -> Done
                          Skip s' -> Skip s'
-                         Yield la s' -> Yield (f la) s'
+                         Yield la s' -> Yield (f <$> la) s'
                      }
