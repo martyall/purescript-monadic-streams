@@ -29,7 +29,7 @@ instance functorStream :: Functor m => Functor (StreamT m) where
   map = mapStream
 
 stream :: forall m a . Applicative m => Array a -> StreamT m a
-stream as = StreamT <<< mkExists $
+stream as = wrap <<< mkExists $
     StreamF { step: next
             , initialState: as
             }
@@ -67,13 +67,13 @@ mapStream f as = runExists mapStream' $ unwrap as
                    }
 
 foldl :: forall m a b. Applicative m => (b -> a -> b) -> b -> StreamT m a -> m b
-foldl f init as = runExists (foldrStream' $ pure init) $ unwrap as
+foldl f init as = runExists (foldlStream' $ pure init) $ unwrap as
   where
-    foldrStream' :: forall s . m b -> StreamF m a s -> m b
-    foldrStream' mb (StreamF strm) = case strm.step strm.initialState of
+    foldlStream' :: forall s . m b -> StreamF m a s -> m b
+    foldlStream' mb (StreamF strm) = case strm.step strm.initialState of
       Done -> mb
-      Skip s' -> foldrStream' mb (StreamF strm {initialState = s'})
-      Yield ma s' -> foldrStream' (lift2 f mb ma) (StreamF strm {initialState = s'})
+      Skip s' -> foldlStream' mb (StreamF strm {initialState = s'})
+      Yield ma s' -> foldlStream' (lift2 f mb ma) (StreamF strm {initialState = s'})
 
 -- foldrStream might blow the stack
 foldr :: forall m a b. Applicative m => (a -> b -> b) -> b -> StreamT m a -> m b
@@ -99,3 +99,4 @@ foldMap f as = runExists (foldMapStream' $ pure mempty) $ unwrap as
       Done -> acc
       Skip s' -> foldMapStream' acc (StreamF strm {initialState = s'})
       Yield ma s' -> foldMapStream' (lift2 (<>) acc $ f <$> ma) (StreamF strm {initialState = s'})
+
