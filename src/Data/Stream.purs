@@ -48,9 +48,33 @@ mapStream :: forall m a b . Functor m => (a -> b) -> Stream m a -> Stream m b
 mapStream f as = runExists mapStream' $ unpackStream as
   where
     mapStream' :: forall s. StreamT m a s -> Stream m b
-    mapStream' (StreamT stream) = Stream <<< mkExists $
-      StreamT stream { step = \s -> case stream.step s of
-                         Done -> Done
-                         Skip s' -> Skip s'
-                         Yield la s' -> Yield (f <$> la) s'
-                     }
+    mapStream' (StreamT strm) = Stream <<< mkExists $
+      StreamT strm { step = \s -> case strm.step s of
+                       Done -> Done
+                       Skip s' -> Skip s'
+                       Yield la s' -> Yield (f <$> la) s'
+                   }
+
+foldlStream :: forall m a b. Monad m => (b -> a -> b) -> b -> Stream m a -> m b
+foldlStream f init as = runExists (foldrStream' $ pure init) $ unpackStream as
+  where
+    foldrStream' :: forall s . m b -> StreamT m a s -> m b
+    foldrStream' mb (StreamT strm) = case strm.step strm.initialState of
+      Done -> mb
+      Skip s' -> foldrStream' mb (StreamT strm {initialState = s'})
+      Yield ma s' ->
+        let mb' = ma >>= \a -> mb >>= \b -> pure $ f b a
+        in foldrStream' mb' (StreamT strm {initialState = s'})
+
+-- foldrStream might blow the stack
+foldrStream :: forall m a b. Monad m => (a -> b -> b) -> b -> Stream m a -> m b
+foldrStream f init as = runExists (foldrStream' $ pure init) $ unpackStream as
+  where
+    foldrStream' :: forall s . m b -> StreamT m a s -> m b
+    foldrStream' mb (StreamT strm) = case strm.step strm.initialState of
+      Done -> mb
+      Skip s' -> foldrStream' mb (StreamT strm {initialState = s'})
+      Yield ma s' -> do
+        a <- ma
+        b <- foldrStream' mb (StreamT strm {initialState = s'})
+        pure $ f a b
