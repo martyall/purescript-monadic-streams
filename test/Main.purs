@@ -3,9 +3,11 @@ module Test.Main where
 import Prelude
 
 import Control.Monad.Eff (Eff)
-import Data.Identity (Identity(..))
 import Data.Array ((:))
-import Data.Stream (foldlStream, foldrStream, stream, unstream)
+import Data.Identity (Identity(..))
+import Data.Monoid.Additive (Additive(..))
+import Data.Newtype (unwrap)
+import Data.Stream (foldMap, foldl, foldr, mapStream, stream, unstream) as Stream
 import Data.String (fromCharArray)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
@@ -21,13 +23,17 @@ arraySpec :: forall r . Spec r Unit
 arraySpec = describe "converting to and from arrays" do
   it "unstream <<< stream == id" do
     let testArray = [1,2,3]
-    Identity testArray `shouldEqual` (unstream <<< stream $ testArray)
+    Identity testArray `shouldEqual` (Stream.unstream <<< Stream.stream $ testArray)
 
 foldSpec :: forall r . Spec r Unit
 foldSpec = describe "folding over a stream" do
   it "can sum with foldl" do
-    let as = stream [1,2,3]
-    foldlStream (+) 0 as `shouldEqual` Identity 6
+    let as = Stream.stream [1,2,3]
+    Stream.foldl (+) 0 as `shouldEqual` Identity 6
   it "can build a string with foldr" do
     let s = "hello"
-    Identity s `shouldEqual` (fromCharArray <$> foldrStream (:) [] (stream ['h','e','l','l','o']))
+    Identity s `shouldEqual` (fromCharArray <$> Stream.foldr (:) [] (Stream.stream ['h','e','l','l','o']))
+  it "can sum with fold" do
+    let as = Stream.mapStream Additive $ Stream.stream [1,2,3]
+        folded = unwrap <$> Stream.foldMap (\a -> negate <$> a) as
+    folded `shouldEqual` Identity (- 6)
