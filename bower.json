@@ -1,5 +1,17 @@
 {
-  "name": "purescript-streams",
+  "name": "purescript-monadic-streams",
+  "description": "A purescript implementation of a monadic streams",
+  "main": "",
+  "authors": [
+    "Blinky <blinky3713@gmail.com>"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/blinky3713/purescript-monadic-streams",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/blinky3713/purescript-monadic-streams.git" 
+  },
+
   "ignore": [
     "**/.*",
     "node_modules",
