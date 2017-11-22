@@ -1,5 +1,6 @@
 module Data.Stream
   ( StreamT
+  , Stream
   , stream
   , unstream
   , enumStream
