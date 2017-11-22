@@ -1,4 +1,14 @@
-module Data.Stream where
+module Data.Stream
+  ( StreamT
+  , stream
+  , unstream
+  , enumStream
+  , mapM
+  , foldl
+  , foldr
+  , foldMap
+  , hoist
+  ) where
 
 import Prelude
 
@@ -88,6 +98,7 @@ instance foldableStream :: Foldable (StreamT Identity) where
   foldl f init as = (\(Identity a) -> a) $ foldl f init as
   foldMap f as = (\(Identity a) -> a) $ foldMap f as
 
+-- | A stream which produces enum values in a range, including the endpoints
 enumStream :: forall m a b .
                 Monad m
            => Enum a
@@ -155,6 +166,7 @@ foldMap f as = runExists (foldMapStream mempty) $ unwrap as
         Skip s' -> foldMapStream acc (StreamF strm {currentState = s'})
         Yield a s' -> foldMapStream (acc  <> f a) (StreamF strm {currentState = s'})
 
+-- | Use a natural transformation to change the context
 hoist :: forall m n a. (m ~> n) -> StreamT m a -> StreamT n a
 hoist phi as = runExists hoistStream $ unwrap as
   where
