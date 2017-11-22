@@ -49,7 +49,7 @@ enumSpec = describe "generating an enum stream" do
 
 mapMSpec ::  forall r . Spec r Unit
 mapMSpec = describe "test mapM" do
-  it "can generate an enum stream" do
+  it "can mapM over a stream" do
     let f = \a -> Identity (a + 1)
         as = Stream.stream [1,2,3]
         bs = Stream.mapM f as
