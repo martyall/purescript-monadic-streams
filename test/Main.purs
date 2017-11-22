@@ -9,7 +9,7 @@ import Data.Int (even)
 import Data.Maybe (Maybe(..))
 import Data.Monoid.Additive (Additive(..))
 import Data.Newtype (unwrap)
-import Data.Stream (foldMap, foldl, foldr, mapStream, stream, unstream, mkEnumStream) as Stream
+import Data.Stream (foldMap, foldl, foldr, mapStream, stream, unstream, enumStream) as Stream
 import Data.String (fromCharArray)
 import Data.Tuple (Tuple(..))
 import Test.Spec (Spec, describe, it)
@@ -43,9 +43,7 @@ foldSpec = describe "folding over a stream" do
     folded `shouldEqual` Identity (- 6)
 
 enumSpec :: forall r . Spec r Unit
-enumSpec = describe "folding over an enum stream" do
-  it "can sum with foldMap over an enum stream" do
-    let range = Tuple 1 3
-        f = \n -> if even n then Identity Nothing else Identity $ Just n
-        as = Stream.mapStream Additive $ Stream.mkEnumStream range f
-    Stream.foldMap id as `shouldEqual` Identity (Additive 4)
+enumSpec = describe "generating an enum stream" do
+  it "can generate an enum stream" do
+    let as = Stream.enumStream $ Tuple 1 3
+    Stream.unstream as `shouldEqual` Identity [1,2,3]
