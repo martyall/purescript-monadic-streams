@@ -5,11 +5,9 @@ import Prelude
 import Control.Monad.Eff (Eff)
 import Data.Array ((:))
 import Data.Identity (Identity(..))
-import Data.Int (even)
-import Data.Maybe (Maybe(..))
 import Data.Monoid.Additive (Additive(..))
 import Data.Newtype (unwrap)
-import Data.Stream (foldMap, foldl, foldr, mapStream, stream, unstream, enumStream) as Stream
+import Data.Stream (foldMap, foldl, foldr, mapStream, stream, unstream, enumStream, mapM) as Stream
 import Data.String (fromCharArray)
 import Data.Tuple (Tuple(..))
 import Test.Spec (Spec, describe, it)
@@ -22,6 +20,7 @@ main = run [consoleReporter] $ do
   arraySpec
   foldSpec
   enumSpec
+  mapMSpec
 
 arraySpec :: forall r . Spec r Unit
 arraySpec = describe "converting to and from arrays" do
@@ -47,3 +46,11 @@ enumSpec = describe "generating an enum stream" do
   it "can generate an enum stream" do
     let as = Stream.enumStream $ Tuple 1 3
     Stream.unstream as `shouldEqual` Identity [1,2,3]
+
+mapMSpec ::  forall r . Spec r Unit
+mapMSpec = describe "test mapM" do
+  it "can generate an enum stream" do
+    let f = \a -> Identity (a + 1)
+        as = Stream.stream [1,2,3]
+        bs = Stream.mapM f as
+    Stream.unstream bs `shouldEqual` Identity [2,3,4]

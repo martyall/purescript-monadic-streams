@@ -2,7 +2,6 @@ module Data.Stream where
 
 import Prelude
 
-import Control.Monad (join)
 import Data.Array (uncons, (:))
 import Data.Enum (class Enum, succ)
 import Data.Exists (Exists, mkExists, runExists)
@@ -11,7 +10,7 @@ import Data.Identity (Identity(..))
 import Data.Maybe (Maybe(..))
 import Data.Monoid (class Monoid, mempty)
 import Data.Newtype (class Newtype, unwrap, wrap)
-import Data.Traversable (class Traversable, sequence, sequenceDefault, traverse)
+import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (Tuple(..))
 
 -- | `StreamF m a s` represents a stream of type `s` producing values of type `a`
