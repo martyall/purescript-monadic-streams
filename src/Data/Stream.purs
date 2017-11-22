@@ -99,7 +99,7 @@ instance foldableStream :: Foldable (StreamT Identity) where
   foldMap f as = (\(Identity a) -> a) $ foldMap f as
 
 -- | A stream which produces enum values in a range, including the endpoints
-enumStream :: forall m a b .
+enumStream :: forall m a .
                 Monad m
            => Enum a
            => Tuple a a

@@ -7,7 +7,7 @@ import Data.Array ((:))
 import Data.Identity (Identity(..))
 import Data.Monoid.Additive (Additive(..))
 import Data.Newtype (unwrap)
-import Data.Stream (foldMap, foldl, foldr, mapStream, stream, unstream, enumStream, mapM) as Stream
+import Data.Stream (foldMap, foldl, foldr, stream, unstream, enumStream, mapM) as Stream
 import Data.String (fromCharArray)
 import Data.Tuple (Tuple(..))
 import Test.Spec (Spec, describe, it)
@@ -37,7 +37,7 @@ foldSpec = describe "folding over a stream" do
     let s = "hello"
     Identity s `shouldEqual` (fromCharArray <$> Stream.foldr (:) [] (Stream.stream ['h','e','l','l','o']))
   it "can sum with fold" do
-    let as = Stream.mapStream Additive $ Stream.stream [1,2,3]
+    let as = map Additive $ Stream.stream [1,2,3]
         folded = unwrap <$> Stream.foldMap (\a -> negate <$> a) as
     folded `shouldEqual` Identity (- 6)
 
