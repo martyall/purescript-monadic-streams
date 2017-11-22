@@ -5,10 +5,13 @@ import Prelude
 import Control.Monad.Eff (Eff)
 import Data.Array ((:))
 import Data.Identity (Identity(..))
+import Data.Int (even)
+import Data.Maybe (Maybe(..))
 import Data.Monoid.Additive (Additive(..))
 import Data.Newtype (unwrap)
-import Data.Stream (foldMap, foldl, foldr, mapStream, stream, unstream) as Stream
+import Data.Stream (foldMap, foldl, foldr, mapStream, stream, unstream, mkEnumStream) as Stream
 import Data.String (fromCharArray)
+import Data.Tuple (Tuple(..))
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Reporter.Console (consoleReporter)
@@ -18,6 +21,7 @@ main :: Eff (RunnerEffects ()) Unit
 main = run [consoleReporter] $ do
   arraySpec
   foldSpec
+  enumSpec
 
 arraySpec :: forall r . Spec r Unit
 arraySpec = describe "converting to and from arrays" do
@@ -37,3 +41,11 @@ foldSpec = describe "folding over a stream" do
     let as = Stream.mapStream Additive $ Stream.stream [1,2,3]
         folded = unwrap <$> Stream.foldMap (\a -> negate <$> a) as
     folded `shouldEqual` Identity (- 6)
+
+enumSpec :: forall r . Spec r Unit
+enumSpec = describe "folding over an enum stream" do
+  it "can sum with foldMap over an enum stream" do
+    let range = Tuple 1 3
+        f = \n -> if even n then Identity Nothing else Identity $ Just n
+        as = Stream.mapStream Additive $ Stream.mkEnumStream range f
+    Stream.foldMap id as `shouldEqual` Identity (Additive 4)
