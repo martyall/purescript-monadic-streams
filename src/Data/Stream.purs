@@ -7,11 +7,10 @@ import Data.Enum (class Enum, succ)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Foldable (class Foldable)
 import Data.Identity (Identity(..))
-import Data.Maybe (Maybe(..), fromJust)
+import Data.Maybe (Maybe(..))
 import Data.Monoid (class Monoid, mempty)
 import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Tuple (Tuple(..))
-import Partial.Unsafe (unsafePartial)
 
 data StreamF m a s = StreamF {step :: s -> m (Step a s), initialState :: s}
 
@@ -64,17 +63,19 @@ mkEnumStream :: forall m a b .
              -> (a -> m (Maybe b))
              -> StreamT m b
 mkEnumStream (Tuple start stop) f =
-    wrap <<< mkExists $ StreamF {step: step', initialState: start}
+    wrap <<< mkExists $ StreamF {step: step', initialState: Just start}
   where
     step' s =
-      if s > stop || succ s == Nothing
-        then pure Done
-        else do
-          let next = unsafePartial fromJust <<< succ $ s
-          mres <- f s
-          case mres of
-            Nothing -> pure $ Skip next
-            Just res -> pure $ Yield res next
+      case s of
+        Nothing -> pure Done
+        Just s' -> if s' > stop
+          then pure Done
+          else do
+            let next = succ $ s'
+            mres <- f s'
+            case mres of
+              Nothing -> pure $ Skip next
+              Just res -> pure $ Yield res next
 
 mapStream :: forall m a b . Monad m => (a -> b) -> StreamT m a -> StreamT m b
 mapStream f as = runExists mapStream' $ unwrap as
