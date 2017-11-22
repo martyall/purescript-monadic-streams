@@ -128,3 +128,8 @@ foldMap f as = runExists (foldMapStream' mempty) $ unwrap as
         Skip s' -> foldMapStream' acc (StreamF strm {initialState = s'})
         Yield a s' -> foldMapStream' (acc  <> f a) (StreamF strm {initialState = s'})
 
+hoistStream :: forall m n a. (m ~> n) -> StreamT m a -> StreamT n a
+hoistStream phi as = runExists hoistStream' $ unwrap as
+  where
+    hoistStream' :: forall s . StreamF m a s -> StreamT n a
+    hoistStream' (StreamF strm) = wrap <<< mkExists $ StreamF strm {step = phi <<< strm.step}
